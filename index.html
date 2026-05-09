@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Budget Tracker</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<h1>💰 Budget Tracker</h1>
+<h2 id="currentMonthYear"></h2>
+
+<div class="nav">
+  <button onclick="showPage('main')">Main</button>
+  <button onclick="showPage('setup')">Setup</button>
+  <button onclick="showPage('expenses')">Expenses</button>
+  <button onclick="resetMonth()">Reset Month</button>
+</div>
+
+<!-- MAIN PAGE -->
+<div id="mainPage">
+
+  <h2>Add Expense</h2>
+
+  <select id="categorySelect"></select>
+
+  <input type="number" id="expenseAmount" placeholder="Amount">
+
+  <input type="text" id="expenseNote" placeholder="Notes (optional)">
+
+  <button onclick="addExpense()">Add Expense</button>
+
+  <h2>Remaining</h2>
+  <div id="remainingList"></div>
+
+</div>
+
+<!-- SETUP PAGE -->
+<div id="setupPage" class="hidden">
+
+  <h2>Add Income</h2>
+
+  <input type="number" id="incomeInput" placeholder="Income amount">
+
+  <button class="small-btn" onclick="addIncome()">Add Income</button>
+
+  <div id="incomeList"></div>
+
+  <h2>Add Category</h2>
+
+  <input type="text" id="categoryName" placeholder="Category name">
+
+  <select id="allocType">
+    <option value="fixed">₩ Fixed</option>
+    <option value="percent">Percentage (%)</option>
+  </select>
+
+  <input type="number" id="categoryValue" placeholder="Value">
+
+  <button class="small-btn" onclick="addCategory()">Add Category</button>
+
+  <h2>Allocations</h2>
+  <div id="allocationList"></div>
+
+</div>
+
+<!-- EXPENSES PAGE -->
+<div id="expensesPage" class="hidden">
+
+  <div class="expenses-header">
+    <h2>Monthly Expenses</h2>
+    <button onclick="printReport()">Print Report</button>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Date</th>
+        <th>Time</th>
+        <th>Category</th>
+        <th>Amount</th>
+        <th>Notes</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+
+    <tbody id="expenseTableBody"></tbody>
+
+  </table>
+
+</div>
+
+<script src="script.js"></script>
+
+</body>
+</html>
