@@ -1,3 +1,8 @@
+let wallets = JSON.parse(localStorage.getItem("wallets")) || [
+  "Monthly Expenses",
+  "Savings",
+  "Reserved Funds"
+];
 let incomes = JSON.parse(localStorage.getItem("incomes")) || [];
 let categories = JSON.parse(localStorage.getItem("categories")) || [];
 let expenses = JSON.parse(localStorage.getItem("expenses")) || [];
@@ -12,6 +17,7 @@ function save() {
   localStorage.setItem("incomes", JSON.stringify(incomes));
   localStorage.setItem("categories", JSON.stringify(categories));
   localStorage.setItem("expenses", JSON.stringify(expenses));
+  localStorage.setItem("wallets", JSON.stringify(wallets));
 }
 
 // PAGE NAVIGATION
@@ -24,15 +30,11 @@ function showPage(page) {
 
 // TOTAL INCOME
 function totalIncome() {
-  return incomes.reduce((a, b) => a + b, 0);
-}
 
-// ALLOCATION VALUE
-function getAllocated(category) {
-  if (category.type === "percent") {
-    return totalIncome() * category.value / 100;
-  }
-  return category.value;
+  return incomes.reduce(
+    (sum, income) => sum + income.amount,
+    0
+  );
 }
 
 // ADD INCOME
@@ -42,7 +44,13 @@ function addIncome() {
 
   if (!value) return;
 
-  incomes.push(value);
+  const wallet =
+  document.getElementById("incomeWallet").value;
+
+incomes.push({
+  amount: value,
+  wallet
+});
 
   document.getElementById("incomeInput").value = "";
 
@@ -98,11 +106,15 @@ function addCategory() {
 
   if (!name || !value) return;
 
+const wallet =
+  document.getElementById("categoryWallet").value;
+
   categories.push({
-    name,
-    type,
-    value
-  });
+  name,
+  type,
+  value,
+  wallet
+});
 
   document.getElementById("categoryName").value = "";
   document.getElementById("categoryValue").value = "";
@@ -391,7 +403,8 @@ function render() {
     div.className = "card small";
 
     div.innerHTML = `
-      ₩${format(income)}
+      ₩${format(income.amount)}
+(${income.wallet})
 
       <div class="inline-actions">
         <button onclick="editIncome(${index})">Edit</button>
@@ -476,6 +489,45 @@ function render() {
     tbody.appendChild(row);
 
   });
+  
+  const walletSelect = document.getElementById("categoryWallet");
+
+walletSelect.innerHTML = "";
+
+wallets.forEach(wallet => {
+
+  let option = document.createElement("option");
+
+  option.value = wallet;
+  option.text = wallet;
+
+  walletSelect.appendChild(option);
+
+});
+
+const incomeWallet =
+  document.getElementById("incomeWallet");
+
+incomeWallet.innerHTML = "";
+
+let unallocatedOption =
+  document.createElement("option");
+
+unallocatedOption.value = "Unallocated";
+unallocatedOption.text = "Unallocated";
+
+incomeWallet.appendChild(unallocatedOption);
+
+wallets.forEach(wallet => {
+
+  let option = document.createElement("option");
+
+  option.value = wallet;
+  option.text = wallet;
+
+  incomeWallet.appendChild(option);
+
+});
 
 }
 
@@ -496,6 +548,6 @@ document.getElementById("currentMonthYear").innerText =
     month: 'long',
     year: 'numeric'
   });
-  
+
 render();
 
