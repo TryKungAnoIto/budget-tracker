@@ -3,6 +3,7 @@ let wallets = JSON.parse(localStorage.getItem("wallets")) || [
   "Savings",
   "Reserved Funds"
 ];
+
 let incomes = JSON.parse(localStorage.getItem("incomes")) || [];
 let categories = JSON.parse(localStorage.getItem("categories")) || [];
 let expenses = JSON.parse(localStorage.getItem("expenses")) || [];
@@ -14,10 +15,10 @@ function format(num) {
 
 // SAVE
 function save() {
+  localStorage.setItem("wallets", JSON.stringify(wallets));
   localStorage.setItem("incomes", JSON.stringify(incomes));
   localStorage.setItem("categories", JSON.stringify(categories));
   localStorage.setItem("expenses", JSON.stringify(expenses));
-  localStorage.setItem("wallets", JSON.stringify(wallets));
 }
 
 // PAGE NAVIGATION
@@ -30,27 +31,38 @@ function showPage(page) {
 
 // TOTAL INCOME
 function totalIncome() {
-
   return incomes.reduce(
     (sum, income) => sum + income.amount,
     0
   );
 }
 
+// CATEGORY ALLOCATION
+function getAllocated(category) {
+
+  if (category.type === "percent") {
+    return totalIncome() * category.value / 100;
+  }
+
+  return category.value;
+}
+
 // ADD INCOME
 function addIncome() {
 
-  const value = Number(document.getElementById("incomeInput").value);
+  const value = Number(
+    document.getElementById("incomeInput").value
+  );
+
+  const wallet =
+    document.getElementById("incomeWallet").value;
 
   if (!value) return;
 
-  const wallet =
-  document.getElementById("incomeWallet").value;
-
-incomes.push({
-  amount: value,
-  wallet
-});
+  incomes.push({
+    amount: value,
+    wallet
+  });
 
   document.getElementById("incomeInput").value = "";
 
@@ -61,12 +73,30 @@ incomes.push({
 // EDIT INCOME
 function editIncome(index) {
 
-  const container = document.getElementById(`income-${index}`);
+  const container =
+    document.getElementById(`income-${index}`);
 
   container.innerHTML = `
-    <input type="number" id="editIncomeValue-${index}" value="${incomes[index]}">
+    <input
+      type="number"
+      id="editIncomeValue-${index}"
+      value="${incomes[index].amount}"
+    >
 
-    <button onclick="saveIncomeEdit(${index})">Save</button>
+    <select id="editIncomeWallet-${index}">
+      ${wallets.map(wallet => `
+        <option
+          value="${wallet}"
+          ${wallet === incomes[index].wallet ? "selected" : ""}
+        >
+          ${wallet}
+        </option>
+      `).join("")}
+    </select>
+
+    <button onclick="saveIncomeEdit(${index})">
+      Save
+    </button>
   `;
 }
 
@@ -76,9 +106,13 @@ function saveIncomeEdit(index) {
     document.getElementById(`editIncomeValue-${index}`).value
   );
 
+  const wallet =
+    document.getElementById(`editIncomeWallet-${index}`).value;
+
   if (!value) return;
 
-  incomes[index] = value;
+  incomes[index].amount = value;
+  incomes[index].wallet = wallet;
 
   save();
   render();
@@ -98,23 +132,27 @@ function deleteIncome(index) {
 // ADD CATEGORY
 function addCategory() {
 
-  const name = document.getElementById("categoryName").value;
+  const name =
+    document.getElementById("categoryName").value;
 
-  const type = document.getElementById("allocType").value;
+  const type =
+    document.getElementById("allocType").value;
 
-  const value = Number(document.getElementById("categoryValue").value);
+  const value = Number(
+    document.getElementById("categoryValue").value
+  );
+
+  const wallet =
+    document.getElementById("categoryWallet").value;
 
   if (!name || !value) return;
 
-const wallet =
-  document.getElementById("categoryWallet").value;
-
   categories.push({
-  name,
-  type,
-  value,
-  wallet
-});
+    name,
+    type,
+    value,
+    wallet
+  });
 
   document.getElementById("categoryName").value = "";
   document.getElementById("categoryValue").value = "";
@@ -128,19 +166,52 @@ function editCategory(index) {
 
   const category = categories[index];
 
-  const container = document.getElementById(`category-${index}`);
+  const container =
+    document.getElementById(`category-${index}`);
 
   container.innerHTML = `
-    <input type="text" id="editCategoryName-${index}" value="${category.name}">
+    <input
+      type="text"
+      id="editCategoryName-${index}"
+      value="${category.name}"
+    >
 
     <select id="editCategoryType-${index}">
-      <option value="fixed" ${category.type === "fixed" ? "selected" : ""}>₩ Fixed</option>
-      <option value="percent" ${category.type === "percent" ? "selected" : ""}>%</option>
+      <option
+        value="fixed"
+        ${category.type === "fixed" ? "selected" : ""}
+      >
+        ₩ Fixed
+      </option>
+
+      <option
+        value="percent"
+        ${category.type === "percent" ? "selected" : ""}
+      >
+        Percentage
+      </option>
     </select>
 
-    <input type="number" id="editCategoryValue-${index}" value="${category.value}">
+    <input
+      type="number"
+      id="editCategoryValue-${index}"
+      value="${category.value}"
+    >
 
-    <button onclick="saveCategoryEdit(${index})">Save</button>
+    <select id="editCategoryWallet-${index}">
+      ${wallets.map(wallet => `
+        <option
+          value="${wallet}"
+          ${wallet === category.wallet ? "selected" : ""}
+        >
+          ${wallet}
+        </option>
+      `).join("")}
+    </select>
+
+    <button onclick="saveCategoryEdit(${index})">
+      Save
+    </button>
   `;
 }
 
@@ -155,6 +226,9 @@ function saveCategoryEdit(index) {
   categories[index].value = Number(
     document.getElementById(`editCategoryValue-${index}`).value
   );
+
+  categories[index].wallet =
+    document.getElementById(`editCategoryWallet-${index}`).value;
 
   save();
   render();
@@ -174,18 +248,21 @@ function deleteCategory(index) {
 // ADD EXPENSE
 function addExpense() {
 
-  const category = document.getElementById("categorySelect").value;
+  const category =
+    document.getElementById("categorySelect").value;
 
-  const amount = Number(document.getElementById("expenseAmount").value);
+  const amount = Number(
+    document.getElementById("expenseAmount").value
+  );
 
-  const note = document.getElementById("expenseNote").value;
+  const note =
+    document.getElementById("expenseNote").value;
 
   if (!amount) return;
 
   const now = new Date();
 
   expenses.push({
-    month: now.toLocaleString('default', { month: 'long' }),
     date: now.toLocaleDateString(),
     time: now.toLocaleTimeString(),
     category,
@@ -205,7 +282,8 @@ function editExpense(index) {
 
   const expense = expenses[index];
 
-  const row = document.getElementById(`expense-row-${index}`);
+  const row =
+    document.getElementById(`expense-row-${index}`);
 
   row.innerHTML = `
     <td>${index + 1}</td>
@@ -215,19 +293,33 @@ function editExpense(index) {
     <td>${expense.time}</td>
 
     <td>
-      <input type="text" id="editExpenseCategory-${index}" value="${expense.category}">
+      <input
+        type="text"
+        id="editExpenseCategory-${index}"
+        value="${expense.category}"
+      >
     </td>
 
     <td>
-      <input type="number" id="editExpenseAmount-${index}" value="${expense.amount}">
+      <input
+        type="number"
+        id="editExpenseAmount-${index}"
+        value="${expense.amount}"
+      >
     </td>
 
     <td>
-      <input type="text" id="editExpenseNote-${index}" value="${expense.note}">
+      <input
+        type="text"
+        id="editExpenseNote-${index}"
+        value="${expense.note || ""}"
+      >
     </td>
 
     <td>
-      <button onclick="saveExpenseEdit(${index})">Save</button>
+      <button onclick="saveExpenseEdit(${index})">
+        Save
+      </button>
     </td>
   `;
 }
@@ -259,6 +351,17 @@ function deleteExpense(index) {
   render();
 }
 
+// RESET MONTH
+function resetMonth() {
+
+  if (!confirm("Reset all monthly expenses?")) return;
+
+  expenses = [];
+
+  save();
+  render();
+}
+
 // PRINT REPORT
 function printReport() {
 
@@ -266,29 +369,44 @@ function printReport() {
     <h1>Monthly Financial Report</h1>
 
     <h2>Income</h2>
+
     <ul>
-      ${incomes.map(i => `<li>₩${format(i)}</li>`).join("")}
+      ${incomes.map(i => `
+        <li>
+          ₩${format(i.amount)}
+          (${i.wallet})
+        </li>
+      `).join("")}
     </ul>
 
     <h2>Category Summary</h2>
+
     <table border="1" cellspacing="0" cellpadding="5">
       <tr>
+        <th>Wallet</th>
         <th>Category</th>
         <th>Allocated</th>
         <th>Spent</th>
+        <th>Remaining</th>
       </tr>
 
       ${categories.map(c => {
+
+        let allocated = getAllocated(c);
 
         let spent = expenses
           .filter(e => e.category === c.name)
           .reduce((a,b) => a + b.amount, 0);
 
+        let remaining = allocated - spent;
+
         return `
           <tr>
+            <td>${c.wallet}</td>
             <td>${c.name}</td>
-            <td>₩${format(getAllocated(c))}</td>
+            <td>₩${format(allocated)}</td>
             <td>₩${format(spent)}</td>
+            <td>₩${format(remaining)}</td>
           </tr>
         `;
       }).join("")}
@@ -312,14 +430,15 @@ function printReport() {
           <td>${e.time}</td>
           <td>${e.category}</td>
           <td>₩${format(e.amount)}</td>
-          <td>${e.note}</td>
+          <td>${e.note || ""}</td>
         </tr>
       `).join("")}
 
     </table>
   `;
 
-  let printWindow = window.open("", "", "width=900,height=700");
+  let printWindow =
+    window.open("", "", "width=900,height=700");
 
   printWindow.document.write(report);
 
@@ -331,14 +450,25 @@ function printReport() {
 // RENDER UI
 function render() {
 
+  // CURRENT MONTH
+  const now = new Date();
+
+  document.getElementById("currentMonthYear").innerText =
+    now.toLocaleString("default", {
+      month: "long",
+      year: "numeric"
+    });
+
   // CATEGORY DROPDOWN
-  const select = document.getElementById("categorySelect");
+  const select =
+    document.getElementById("categorySelect");
 
   select.innerHTML = "";
 
   categories.forEach(c => {
 
-    let option = document.createElement("option");
+    let option =
+      document.createElement("option");
 
     option.value = c.name;
     option.text = c.name;
@@ -347,7 +477,8 @@ function render() {
 
   });
 
-  let other = document.createElement("option");
+  let other =
+    document.createElement("option");
 
   other.value = "Other";
   other.text = "Other";
@@ -355,7 +486,8 @@ function render() {
   select.appendChild(other);
 
   // REMAINING LIST
-  const remaining = document.getElementById("remainingList");
+  const remaining =
+    document.getElementById("remainingList");
 
   remaining.innerHTML = "";
 
@@ -369,19 +501,25 @@ function render() {
 
     let left = allocated - spent;
 
-    let div = document.createElement("div");
+    let div =
+      document.createElement("div");
 
     div.className = "card";
 
     div.innerHTML = `
       <strong>
-  ${c.name}
-  (${c.type === "percent"
-    ? c.value + "%"
-    : "₩" + format(c.value)})
-</strong><br>
-      <span class="${left >= 0 ? 'green' : 'red'}">
-      ₩${format(left)}
+        ${c.name}
+        (${c.type === "percent"
+          ? c.value + "%"
+          : "₩" + format(c.value)})
+      </strong>
+
+      <div class="small">
+        Wallet: ${c.wallet}
+      </div>
+
+      <span class="${left >= 0 ? "green" : "red"}">
+        ₩${format(left)}
       </span>
     `;
 
@@ -390,25 +528,36 @@ function render() {
   });
 
   // INCOME LIST
-  const incomeList = document.getElementById("incomeList");
+  const incomeList =
+    document.getElementById("incomeList");
 
   incomeList.innerHTML = `
-    <h3>Total Income: ₩${format(totalIncome())}</h3>
+    <h3>
+      Total Income:
+      ₩${format(totalIncome())}
+    </h3>
   `;
 
   incomes.forEach((income, index) => {
 
-    let div = document.createElement("div");
+    let div =
+      document.createElement("div");
 
     div.className = "card small";
+    div.id = `income-${index}`;
 
     div.innerHTML = `
       ₩${format(income.amount)}
-(${income.wallet})
+      (${income.wallet})
 
       <div class="inline-actions">
-        <button onclick="editIncome(${index})">Edit</button>
-        <button onclick="deleteIncome(${index})">Delete</button>
+        <button onclick="editIncome(${index})">
+          Edit
+        </button>
+
+        <button onclick="deleteIncome(${index})">
+          Delete
+        </button>
       </div>
     `;
 
@@ -417,7 +566,8 @@ function render() {
   });
 
   // CATEGORY LIST
-  const allocationList = document.getElementById("allocationList");
+  const allocationList =
+    document.getElementById("allocationList");
 
   allocationList.innerHTML = "";
 
@@ -429,17 +579,33 @@ function render() {
 
     totalAllocated += allocated;
 
-    let div = document.createElement("div");
+    let div =
+      document.createElement("div");
 
     div.className = "card";
+    div.id = `category-${index}`;
 
     div.innerHTML = `
-      <strong>${category.name}</strong><br>
-      ₩${format(allocated)}
+      <strong>
+        ${category.name}
+      </strong>
+
+      <div class="small">
+        Wallet: ${category.wallet}
+      </div>
+
+      <div>
+        ₩${format(allocated)}
+      </div>
 
       <div class="inline-actions">
-        <button onclick="editCategory(${index})">Edit</button>
-        <button onclick="deleteCategory(${index})">Delete</button>
+        <button onclick="editCategory(${index})">
+          Edit
+        </button>
+
+        <button onclick="deleteCategory(${index})">
+          Delete
+        </button>
       </div>
     `;
 
@@ -448,40 +614,61 @@ function render() {
   });
 
   // UNALLOCATED
-  let unallocated = totalIncome() - totalAllocated;
+  let unallocated =
+    totalIncome() - totalAllocated;
 
-  let div = document.createElement("div");
+  let unallocatedDiv =
+    document.createElement("div");
 
-  div.className = "card";
+  unallocatedDiv.className = "card";
 
-  div.innerHTML = `
-    <strong>Unallocated</strong><br>
-    ₩${format(unallocated)}
+  unallocatedDiv.innerHTML = `
+    <strong>Unallocated</strong>
+
+    <div>
+      ₩${format(unallocated)}
+    </div>
   `;
 
-  allocationList.appendChild(div);
+  allocationList.appendChild(unallocatedDiv);
 
   // EXPENSE TABLE
-  const tbody = document.getElementById("expenseTableBody");
+  const tbody =
+    document.getElementById("expenseTableBody");
 
   tbody.innerHTML = "";
 
   expenses.forEach((expense, index) => {
 
-    let row = document.createElement("tr");
+    let row =
+      document.createElement("tr");
+
+    row.id = `expense-row-${index}`;
 
     row.innerHTML = `
       <td>${index + 1}</td>
+
       <td>${expense.date}</td>
+
       <td>${expense.time}</td>
+
       <td>${expense.category}</td>
+
       <td>₩${format(expense.amount)}</td>
+
       <td>${expense.note || ""}</td>
 
       <td>
         <div class="inline-actions">
-          <button onclick="editExpense(${index})">Edit</button>
-          <button onclick="deleteExpense(${index})">Delete</button>
+
+          <button onclick="editExpense(${index})">
+            Edit
+          </button>
+
+          <button onclick="deleteExpense(${index})">
+            Delete
+          </button>
+
         </div>
       </td>
     `;
@@ -489,65 +676,51 @@ function render() {
     tbody.appendChild(row);
 
   });
-  
-  const walletSelect = document.getElementById("categoryWallet");
 
-walletSelect.innerHTML = "";
+  // CATEGORY WALLET DROPDOWN
+  const walletSelect =
+    document.getElementById("categoryWallet");
 
-wallets.forEach(wallet => {
+  walletSelect.innerHTML = "";
 
-  let option = document.createElement("option");
+  wallets.forEach(wallet => {
 
-  option.value = wallet;
-  option.text = wallet;
+    let option =
+      document.createElement("option");
 
-  walletSelect.appendChild(option);
+    option.value = wallet;
+    option.text = wallet;
 
-});
+    walletSelect.appendChild(option);
 
-const incomeWallet =
-  document.getElementById("incomeWallet");
-
-incomeWallet.innerHTML = "";
-
-let unallocatedOption =
-  document.createElement("option");
-
-unallocatedOption.value = "Unallocated";
-unallocatedOption.text = "Unallocated";
-
-incomeWallet.appendChild(unallocatedOption);
-
-wallets.forEach(wallet => {
-
-  let option = document.createElement("option");
-
-  option.value = wallet;
-  option.text = wallet;
-
-  incomeWallet.appendChild(option);
-
-});
-
-}
-
-function resetMonth() {
-
-  if (!confirm("Reset all monthly expenses?")) return;
-
-  expenses = [];
-
-  save();
-  render();
-}
-
-const now = new Date();
-
-document.getElementById("currentMonthYear").innerText =
-  now.toLocaleString('default', {
-    month: 'long',
-    year: 'numeric'
   });
 
-render();
+  // INCOME WALLET DROPDOWN
+  const incomeWallet =
+    document.getElementById("incomeWallet");
 
+  incomeWallet.innerHTML = "";
+
+  let unallocatedOption =
+    document.createElement("option");
+
+  unallocatedOption.value = "Unallocated";
+  unallocatedOption.text = "Unallocated";
+
+  incomeWallet.appendChild(unallocatedOption);
+
+  wallets.forEach(wallet => {
+
+    let option =
+      document.createElement("option");
+
+    option.value = wallet;
+    option.text = wallet;
+
+    incomeWallet.appendChild(option);
+
+  });
+
+}
+
+render();
